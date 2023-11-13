@@ -1,0 +1,46 @@
+import Std
+use Mem
+
+namespace Ptr
+
+
+pub struct RcInner(T: Any) {
+    value: T,
+    count: UInt,
+    alloc: &Allocator,
+}
+
+pub struct Rc(T: Any, A: Allocator = DefaultAllocator) {
+    inner: &RcInner(T),
+}
+
+for Rc(T:, A:) as R {
+    pub def new(value: T, alloc: A) -> R throws AllocError
+        do R.{ &alloc.try_alloc(RcInner.{value, 0, alloc}).#throw };
+
+    impl Deref, DerefMut
+    pub def Target = T;
+}
+
+for rc: Rc(T:, A:) as R {
+    pub def free() -> Void throws AllocError {
+        &rc.inner.count--;
+        if rc.inner.count == 0
+            do &rc.inner.alloc.try_dealloc(rc.inner).#throw;
+    }
+
+    impl Deref
+    pub def deref() -> *T
+        do r.inner.value;
+
+    impl DerefMut
+    pub def deref_mut() -> &T
+        do &r.inner.value;
+
+    impl Copy
+    pub def copy() -> R {
+        &r.inner.count++;
+        return hello;
+    }
+}
+

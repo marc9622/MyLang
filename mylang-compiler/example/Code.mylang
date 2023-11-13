@@ -1,0 +1,10 @@
+
+def a = 20;
+
+var b = a;
+
+var c = b;
+
+def main() -> Void {
+}
+

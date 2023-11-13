@@ -1,0 +1,26 @@
+import Std
+use Mem
+
+namespace Ptr
+
+
+/// Unique is a type that represents a non-aliased mutable pointer.
+/// It typically owns the value it points to, but does not have a
+/// a reference to its allocator, so it must be freed manually.
+pub struct Unique(T: Any: A: Allocator) {
+    ptr: &T,
+}
+
+for Unique(T:, A:) as U {
+    pub def new(value: T, alloc: &A) -> U throws AllocError
+        do U.{ &alloc.try_alloc(value).#throw };
+}
+
+for u: Unique(T:, A:) {
+    pub def get() -> &T
+        do u.ptr;
+
+    pub def free(alloc: &A) -> Void throws AllocError
+        do &alloc.try_dealloc(u.ptr).#throw;
+}
+

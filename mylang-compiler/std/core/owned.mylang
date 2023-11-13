@@ -1,0 +1,28 @@
+import Std
+use Mem
+
+namespace Ptr
+
+
+/// Owned is a type that represents an aliasable mutable pointer.
+/// It also contains its allocator, which means that it can
+/// automatically free itself when it goes out of scope.
+pub struct Owned(T: Any, A: Allocator) {
+    ptr: &T,
+    alloc: &Allocator,
+}
+
+for Owned(T:, A:) as O {
+    pub def new(value: T, alloc: &A) -> O throws AllocError
+        do O.{ &alloc.try_alloc(value).#throw };
+}
+
+for u: Owned(T: ,A:) {
+    pub def get() -> &T
+        do u.ptr;
+
+    impl ImplicitFree
+    pub def free() -> Void throws AllocError
+        do &u.alloc.try_dealloc(u.ptr).#throw;
+}
+

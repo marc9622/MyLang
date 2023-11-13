@@ -1,0 +1,27 @@
+import Std
+use Mem
+use Unsafe
+
+namespace Cell
+
+
+pub struct Cell(T: Copy) {
+    value: Mut(T),
+}
+
+for Cell(T:) as C {
+    pub def new(value: T) -> C
+        do C.{ Mut.of(value) };
+}
+
+for c: *Cell(T:) {
+    pub def get() -> T
+        do copy c.value.value;
+
+    pub def replace(value: T) -> T {
+        var old = copy c.value.value;
+        c.value.value.set(value);
+        return old;
+    }
+}
+

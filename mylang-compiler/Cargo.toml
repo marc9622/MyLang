@@ -1,0 +1,10 @@
+[package]
+name = "mylang-compiler"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = ["llvm16-0"] }
+llvm-sys-160 = { package = "llvm-sys", version = "160" }

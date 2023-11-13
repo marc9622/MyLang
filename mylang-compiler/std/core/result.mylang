@@ -1,0 +1,109 @@
+import Std
+use Mem
+use Unsafe
+
+namespace Err
+
+/// When using the 'throws' keyword, the compiler will automatically
+/// converts the return type to an anonymous type that implements
+/// this trait.
+///
+/// The type parameter 'T' is the type of the success value that is
+/// returned when no error was thrown.
+///
+/// The underlying generated type will be a tagged union of the
+/// success type and all of the errors that might be thrown by the
+/// function. E.g:
+/// ```
+/// // This...
+/// def read_n_words_from_file(def n: UInt, file: Str) ->
+///     [n]Str throws IOError, EOFError, AllocError {
+///     /* code */
+/// }
+///
+/// // turns into this...
+/// def read_n_words_from_file(def n: UInt, file: Str) ->
+///     union { [count]Str, IOError, EOFError, AllocError } {
+///     /* code */
+/// }
+/// // though, the union's implementation of 'Result' is ignored in
+/// // this example.
+/// ```
+/// 
+/// Technically, this also allows using error types as the actual
+/// return type and non-error types as the error types, but that is
+/// typically not very useful.
+///
+/// Since the underlying type is a union, it can be used in switch
+/// statements, like so:
+/// ```
+/// switch read_n_words_from_file(10, "data.txt") {
+///     [10]Str.{words} do for word in words do println(word);
+///     IOError         do println("Could not read file");
+///     EOFError        do println("Reached end of file");
+///     error           do throw error;
+/// }
+/// ```
+pub trait Result(T: Any) for R {
+    for r: R {
+        /// Returns true if the result is a success.
+        pub virt succeed() -> Bool do !r.fail();
+        /// Returns true if the result is an error.
+        pub virt fail() -> Bool do !r.succeed();
+
+        /// Returns the value of the result if it is a success.
+        /// Panics if the result is an error.
+        pub virt panic() -> T {
+            if r.succeed() do
+                return r.get_unsafe();
+            else do
+                panic "Result was an error";
+        }
+
+        /// Returns the value of the result if it is a success.
+        /// Returns garbage memory if the result is an error.
+        impl GetUnsafe(T)
+        virt get_unsafe() -> T;
+
+        /// A macro that returns the value of the result if it is a
+        /// success. If the result is an error, the macro will
+        /// propagate the error to the outer scope.
+        pub virt macro throw -> T;
+    }
+}
+
+for r: Result(T: Forget) {
+    /// If the result is a success then its value is returned, and
+    /// the given value is forgotten.
+    /// Returns the given value if the result is an error.
+    pub def else(value: T) -> T {
+        if r.succeed() do
+            return r.get_unsafe();
+        else do
+            return value;
+    }
+}
+
+for r: Result(T: Clone) {
+    /// Returns the value of the result if it is a success.
+    /// Returns a clone of value pointed to by the given pointer.
+    pub def else_clone(value: &T) -> T {
+        if r.succeed() do
+            return r.get_unsafe();
+        else do
+            return value.clone();
+    }
+}
+
+for r: Result(T: Default) {
+    /// Returns the value of the result if it is a success.
+    /// Returns the default value of the type if the result is an
+    /// error.
+    pub def else_default() -> T {
+        if r.succeed() do
+            return r.get_unsafe();
+        else do
+            return T.default();
+    }
+}
+

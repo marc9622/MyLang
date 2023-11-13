@@ -1,0 +1,3 @@
+def a = 20 ;
+def b = a ;
+def c = b ;
