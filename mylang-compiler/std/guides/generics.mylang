@@ -1,0 +1,55 @@
+
+trait Trait for Self {
+    virt create() -> Self;
+
+    for self: Self {
+        virt use() -> Void;
+    }
+}
+
+struct Struct {}
+
+impl Trait for Struct {
+    def create() -> Struct return .{};
+
+    for self: Struct {
+        def use() -> Void return;
+    }
+}
+
+// -------------- Input ---------------
+
+// Caller chooses the type. Callee can refer to the specific type.
+def func(val: A: Trait) -> Void
+    return val.use();
+
+// Caller chooses the type. Concrete type is anonymous for the callee.
+def func(val: _: Trait) -> Void
+    return val.use();
+
+
+// -------------- Output --------------
+
+// Caller chooses type. Callee can refer to the specific type.
+def func() -> A: Trait
+    return A.create();
+
+// Callee chooses type. Concrete type is anonymous for the caller.
+def func() -> some Trait
+    return Struct.create();
+
+
+// --------- Input and Ouput ----------
+
+// Caller chooses both. They may be different.
+def func(val: _: Trait) -> A: Trait
+    return A.create();
+
+// Caller chooses both. They are the same.
+def func(val: A: Trait) -> A
+    return val;
+
+// Caller chooses input. Callee chooses output.
+def func(val: _: Trait) -> some Trait
+    return Struct.create();
+

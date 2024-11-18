@@ -1,0 +1,10 @@
+
+union List(T: Any) {
+    struct Cons {
+        tail: NonNull(^List(T));
+    };
+    struct Nil {
+        tail: null::^List(T);
+    };
+}
+

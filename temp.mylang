@@ -1,0 +1,197 @@
+
+module GenericValues {
+    import "std".Cast;
+
+    struct Pointer(Any) of Size(8) {
+        address: USize;
+    }
+
+    for Pointer(_) impl Copy;
+
+    def main() -> Void {
+        
+        let nullptr: Pointer(Any) = .{0};
+        //let ptr1: Pointer(Int) = nullptr;
+
+        use_ptr(nullptr);
+
+        let str_ptr: Pointer(Str) = nullptr;
+    }
+
+    def use_ptr(ptr: Pointer(Int)) -> Void {
+        var int: Int = 124;
+        var ptr_to_int: Pointer(Int) = reinterpret(^int);
+        &ptr.pointer = ptr_to_int;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// A rank-1 generic function
+def map(
+    array: Arr(T: Any),
+    func: (_: T) -> U: Any
+) -> Arr(U) {
+
+    println(U.name);
+
+    // Do something
+}
+
+// A map<Int, Float> monomorph
+def map(array: Arr(Int), func: (_: Int) -> Float) -> Arr(Float) {
+
+    println(Float.name);
+
+    // Do something
+}
+
+
+
+struct Data {
+    number: Int;
+    name: Str;
+    is_valid: Bool;
+}
+
+struct Logger {
+    name: Str;
+    verbosity: VerbosityLevel;
+    func: (before: *WithInfo(T: Any), after: *T) -> Void;
+}
+
+def perform_update(
+    data: &Data,
+    logger: *Logger,
+) -> Void {
+    let new_number = data.number + 10;
+    let new_name   = "Hello";
+    let new_valid  = false;
+
+    logger.func(data.number,   new_number);
+    logger.func(data.name,     new_name);
+    logger.func(data.is_valid, new_valid);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+builtin generic_shallow_copy(a: &A: Size) -> A;
+
+builtin generic_shallow_copy(a: (&A): Size) -> A;
+
+builtin generic_shallow_copy(a: &(A: Size)) -> A;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def add(a: T: Math.Add, b: T) -> T return a + b;
+
+
+def array0 = .{0.1, 0.2, 0.3};
+
+def array1 = []Double.{0.1, 0.2, 0.3};
+
+def array2: []Double = .{0.1, 0.2, 0.3};
+
+trait Monad for Self(_: Any) {
+
+    virt new(self: A: Any) -> Self(A);
+
+    for self: Self(A: Any) {
+        virt bind(func: (_: A) -> Self(B)) -> Self(B);
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

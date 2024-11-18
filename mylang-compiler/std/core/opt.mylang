@@ -1,4 +1,91 @@
-import Std
+namespace Optional;
 
-package Core
+
+// Private trait that indicates that a type has a user defined optional type.
+// It uses an associated instead of type parameter to make sure only one implementation
+// can exist for a given inner type.
+trait HasOptional {
+    virt Outer: Any;
+}
+
+// pub alias ?T: HasOptional = Opt(T);
+pub alias Opt(T: HasOptional) = T.Optional
+
+// Public trait that indicates that a type is an optional type for some inner type.
+// Like 'HasOptional' it also uses an associated type.
+pub trait IsOptional for Outer {
+    virt Inner: Any;
+
+    // Automatically implement HasOptional for the inner type,
+    // where the outer type is the current type.
+    impl HasOptional
+    for Inner {
+        virt Outer = Outer;
+    }
+
+    // Construction methods.
+    pub virt from_some(value: Inner) pure -> Outer;
+    pub virt from_null() pure -> Outer;
+
+    // Non-public checking methods.
+    for outer: *Outer {
+        virt is_some() pure -> Bool;
+        virt into_some_unsafe() pure -> Inner;
+    }
+
+    // Enables the 'in' operator.
+    for outer: *Outer {
+        impl Is(Inner)
+        virt operator() pure -> Bool do outer.is_some();
+
+        impl IsNull
+        virt operator() pure -> Bool do !outer.is_some();
+
+        impl TryInto(Inner)
+        virt operator() pure -> Inner throws Void {
+            if outer is Inner do
+                return outer.into_some_unsafe();
+            else do
+                throw;
+        }
+    }
+
+    // Helper methods with default implementations
+    for o: &Outer {
+        virt set_some(value: Inner) -> Void {
+            &o = Outer.from_some(value);
+        }
+
+        virt set_null() -> Void {
+            do &o = Outer.from_null();
+        }
+    }
+}
+
+struct Some(T: Any) { value: T }
+struct Null {}
+
+union Maybe(T: Any) tagged U8 {
+    Some(T);
+    Null;
+}
+
+for T: !HasOptional {
+    impl IsOptional for Maybe(T) {
+        def Inner = T;
+
+        def from_some(value: T) pure -> Maybe(T) do Maybe(Some(value));
+        def from_null()         pure -> Maybe(T) do Maybe(Null());
+
+        for maybe: *Maybe(T) {
+            def is_some() pure -> Bool do o is Some(T);
+            def into_some_unsafe() pure -> T {
+                if maybe is Some(T).{value} do
+                    return value;
+                else do
+                    #unreachable;
+            }
+        }
+    }
+}
 

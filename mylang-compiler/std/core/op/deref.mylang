@@ -1,0 +1,19 @@
+
+pub trait DerefView for Self {
+    def Target;
+    virt op(self: *Self) -> *Target;
+}
+
+pub trait DerefRef for Self {
+    def Target;
+    virt op(self: &Self) -> &Target;
+}
+
+pub trait MemberView for Self: DerefView {
+    virt op(self: *Self) -> *Self.Target;
+}
+
+pub trait MemberRef for Self: DerefRef {
+    virt op(self: &Self) -> &Self.Target;
+}
+

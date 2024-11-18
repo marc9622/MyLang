@@ -1,0 +1,39 @@
+use Std.Reference;
+use Std.Memory;
+
+    // Enables the 'and', 'or', and 'not' operators.
+    pub trait And for Self {
+        virt operator(left: *Self, right: *Self) -> Self;
+    }
+
+    //  newtype CodeUnit = U8; // UTF-8 code unit
+    pub newtype Char = U32; // UTF-8 code point
+
+    pub alias &T: Any = Mut(T);  // Mutable reference
+    pub alias *T: Any = View(T); // Immutable reference
+    pub alias ^T: Any = Ptr(T);  // Raw pointer
+    pub alias ?T: Any = Opt(T);  // Optional value
+
+    pub alias [n: Usize]T: Any = Seq(T, n); // Fixed size array
+
+}
+
+namespace Compare {
+    // Enables the '==' operator.
+    pub trait Eq for Self {
+        virt Result = Bool;
+        virt operator(left: *Self, right: *Self) pure -> Result;
+    }
+
+    impl Ne for Self: Eq where Result = Bool {
+        virt Result = Bool;
+        virt operator(left: *Self, right: *Self) pure -> Bool do
+            !
+    }
+
+    // Enables the '!=' operator.
+    pub trait Ne for Self {
+        virt Result = Bool;
+        virt operator(left: *Self, right: *Self) pure -> Result;
+    }
+}

@@ -1,0 +1,40 @@
+
+def main() async -> {
+    let listener = TcpListener.bind("localhost:1234").#await.#panic;
+
+    for (let stream in listener.accept_concurrently(null)) {
+        handle_connection(stream.#panic);
+    }
+}
+
+def handle_connection(stream: TcpStream) async -> {
+    var buffer = [1024]Byte;
+    &stream.read(&buffer).#await.#panic;
+
+    let get = "GET / HTTP/1.1\r\n";
+    let sleep = "GET / sleep HTTP/1.1\r\n";
+
+    let {status_line, filename} = 
+        if (buffer.starts_with(get)) .{
+            "HTTP/1.1 200 OK \r\n\r\n",
+            "hello.html",
+        }
+        elif (buffer.starts_with(sleep)) {
+            Thread.sleep(5 * Time.sec).#await;
+            break .{
+                "HTTP/1.1 200 OK \r\n\r\n",
+                "hello.html",
+            };
+        }
+        else .{
+            "HTTP/1.1 404 NOT FOUND \r\n\r\n",
+            "404.html"
+        };
+
+    let contents = File.read_to_string(filename).#panic;
+
+    let response = Str.concat(status_line, contents);
+    &stream.write(response.as_bytes()).#await.#panic;
+    &stream.flush().#await.#panic;
+}
+

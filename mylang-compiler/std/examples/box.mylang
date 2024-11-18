@@ -1,0 +1,25 @@
+// Example copied from Rust-By-Example: https://doc.rust-lang.org/rust-by-example/std/box.html
+
+import Std.Mem;
+
+impl CopyClone
+struct Point {
+    x: F64;
+    y: F64;
+}
+
+struct Rectangle {
+    top_left: Point;
+    bottom_right: Point;
+}
+
+def origin() -> Point do .{0.0, 0.0};
+def boxed_origin() -> Box(Point) do Box.new(.{0.0, 0.0});
+
+def main() -> {
+    let point:       Point          = origin();
+    let rect:        Rectangle      = .{origin(), .{3.0, -4.0}};
+    let boxed_point: Box(Point)     = Box.new(origin());
+    let boxed_rect:  Box(Rectangle) = Box.new(.{origin(), .{3.0, -4.0}});
+    let boxed_box:   Box(Box(Point) = Box.new(boxed_origin());
+}

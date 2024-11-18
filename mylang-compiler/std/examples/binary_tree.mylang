@@ -1,0 +1,77 @@
+// Example copied from the Nim tutorial: https://nim-lang.org/docs/tut2.html
+
+import Std.Arr.Stack;
+import Std.Mem.GlobalAllocator;
+import Std.Ptr.RefKind;
+
+pub struct BinaryTree(T: Any) {
+    le: ?&BinaryTree(T);
+    ri: ?&BinaryTree(T);
+    data: T;
+}
+
+for BinaryTree(T: Any) {
+    pub def new_node(data: T) pure -> BinaryTree(T)
+        return .{null, null, data};
+}
+
+for root: &BinaryTree(T: Any) {
+    pub def add(new: &BinaryTree(T)) -> Void {
+        var current = root;
+
+        while (true) {
+            if (current.data < new.data) {
+                if (current.le is &BinaryTree next) {
+                    current = &next;
+                }
+                else {
+                    &current.le = &new.as_opt();
+                    return;
+                }
+            }
+            else {
+                if (current.ri is &BinaryTree next) {
+                    current = &next;
+                }
+                else {
+                    &current.ri = &new.as_opt();
+                    return;
+                }
+            }
+        }
+    }
+
+    pub def add(data: T) -> Void
+        return root.add(GlobalAllocator.alloc(BinaryTree.new_node(data)).#panic);
+}
+
+for root: RefKind(BinaryTree(T: Any)) {
+    pub def macro preorder(loop_value: #EmptyDecl = #"let _", loop_index: #UniqueId = #"_", loop_body: #Expr) -> Void {
+        var stack = Stack.of(GlobalAllocator.instance, root);
+
+        for (index in 0..Usize.max) {
+            let node = stack.pop_front().#unreachable;
+
+            |#(loop_value) = node.data, let #(loop_index) = index| do
+                #(loop_body);
+
+            /* With the example from the main function:
+            |let str = node.data, let _ = index| do
+                print(str);
+            */
+
+            if (node.ri is not null) stack.push_front(node.ri);
+            if (node.le is not null) stack.push_front(node.le);
+            
+            if (stack.is_empty()) break;
+        }
+    }
+}
+
+def main() -> {
+    var root = BinaryTree.new_node("hello");
+    &root.add("world");
+    
+    for (str in root.#preorder)
+        println(str);
+}

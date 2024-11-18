@@ -1,0 +1,96 @@
+module Array;
+
+for [n: Usize]T: Any {
+    pub def zeroed() -> [n]T {
+        var a: [n]T = uninit;
+
+        Std.Mem.set(&a, 0);
+
+        return a;
+    }
+
+    impl Default where T: Default
+    pub def defaulted() -> [n]T {
+        var a: [n]T = uninit;
+
+        for (i in 0..<n)
+            &a.at(i) = T.default();
+
+        return a;
+    }
+
+    impl Default where T: Clone
+    pub def filled_clones(value: *T) -> [n]T {
+        var a: [n]T = uninit;
+
+        for (i in 0..<n)
+            &a.at(i) = value.clone();
+
+        return a;
+    }
+
+    impl Default where T: Copy
+    pub def filled(value: *T) -> [n]T {
+        var a: [n]T = uninit;
+
+        for (i in 0..<n)
+            &a.at(i) = copy value;
+
+        return a;
+    }
+}
+
+for a: [n: Usize]T: Any {
+    impl Forget;
+
+    where T: Free
+    pub def free_all() -> Void throws AllocError {
+        for (i in o..<n)
+            a.offset_right(i).deref().free().#throw;
+    }
+}
+
+for a: *[n: Usize]T: Any {
+    pub def get(index: Usize) -> ?*T {
+        if (index >= n)
+            return null;
+
+        if (sizeof(T) == 0)
+            return Std.Ptr.to_zero_sized().deref().opt();
+        
+        return Std.Ptr.offset_right(a^, index).deref().opt();
+    }
+
+    impl Clone where T: Clone
+    pub def clone() -> [n: Usize]T: Any {
+        var b: [n]T = uninit;
+
+        for (i in 0..<n)
+            &b.at(i) = a.get(i).clone();
+
+        return b;
+    }
+
+    impl Copy where T: Copy;
+}
+
+for a: &[n: Usize]T: Any {
+    pub def at(index: Usize) -> ?&T {
+        if (index >= n)
+            return null;
+
+        if (sizeof(T) == 0)
+            return Std.Ptr.to_zero_sized().deref().opt();
+
+        return Std.Ptr.offset_right(a^, index).deref().opt();
+    }
+
+    pub def offset_right(amount: Usize) -> ^T {
+        return Std.Ptr.offset_right(amount);
+    }
+
+    pub def offset(amount: Isize) -> ^T {
+        return Std.Ptr.offset(amount);
+    }
+}
+

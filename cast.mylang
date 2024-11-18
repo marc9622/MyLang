@@ -1,0 +1,92 @@
+
+/// Module of no-op functions used to cast from one type to another.
+module Cast;
+
+// --- Builtin ---
+
+/// Unsafe cast that lets you assume a value is of a different type.
+pub builtin unsafe_cast(val: Size(s: UInt)) -> Size(s);
+
+for A: Align(a: UInt) {
+    pub constraint BiggerAlign(b: UInt) {
+        if (a < b) comperror "Cannot cast to a type with a stricter alignment";
+    }
+}
+
+/// Unsafe cast that lets you assume a value is of a different type.
+pub def reinterpret(val: Size(s: UInt) and Align(a: UInt)) -> Size(s) and BiggerAlign(a) {
+    return unsafe_cast(val);
+}
+
+// --- Pointers ---
+
+/// Unsafe cast from a 'view to a value' to a 'reference to that value'.
+///
+/// It is erronious behavior to try to mutate a constant value, which means that this
+/// function should only be used when the value referenced is known to be mutable
+/// (i.e. declared with `var`, `static`, or heap allocated).
+///
+/// The usecase for this function is to allow you to expose a reference through a view,
+/// which is useful for implementing "interior mutability".
+///
+/// For example, unlike languages like C, where a `int *const *` pointer still allows
+/// you to mutate the inner `int`, in this language, a `*&Int` does _not_ allow you to
+/// mutate the `Int` value. This function allows you to work around that limitation and
+/// allow you to create containers that can expose a mutable reference to their
+/// contents even if the user only has a view to the container.
+///
+/// Generally, using this function is discouraged, as even if the behavior is well-
+/// defined when used correctly, it _can_ be used to misuse a library API, put values
+/// in invalid states, and cause subtle bugs due to values being mutated in places
+/// where it is not expected to.
+pub def view_to_ref(view: *T: Any) -> &T: Any
+    return reinterpret(view);
+
+/// Safe cast from a 'pointer to a value' to a 'pointer to that value as bytes'.
+pub def bytes(val: ^Size(s: UInt)) -> ^[s]Byte
+    return reinterpret(val);
+
+// --- Trivial ---
+
+/// Empty trait that marks that a type can be trivially casted to another type.
+for From: Size(s: UInt)
+pub trait Trivial(Into: Size(s));
+
+for Ptr(Trivial(Into: _))
+impl Trivial(Ptr(Into));
+
+/// Safe cast that lets you assume a value is of a different type, if the cast is
+/// valid.
+pub def cast(val: Trivial(Into: _)) -> Into
+    return reinterpret(val);
+
+// --- Representation ---
+
+for A: Fields(f: UInt)
+pub constraint SameRepr(B: Fields(f)) {
+    for (let i in 0.to(f)) {
+        if (A.fields[i] != B.fields[i]) comperror;
+    }
+}
+
+/// Safe cast that lets you assume a value is of a different type, if that type
+/// contains the same fields as the original type.
+pub def same_repr(val: From: Size) -> Into: Size and SameRepr(From) {
+    return reinterpret(val);
+}
+
+for A: Fields(a: UInt)
+pub constraint SubType(B: Fields(b: UInt)) {
+    if (a > b) comperror;
+
+    for (let i in 0.to(a)) {
+        if (A.fields(a) != B.fields(i)) comperror;
+    }
+}
+
+/// Safe cast from a 'pointer to a value' to a 'pointer to the first fields of that
+/// value'.
+pub def sub_type(val: ^From: Fields(f)) -> ^Into: SubType(From) {
+    return reinterpret(val);
+}
+

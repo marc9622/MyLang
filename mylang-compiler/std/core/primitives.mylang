@@ -1,0 +1,32 @@
+import Std
+
+
+/// Represents a 32 bit signed integer.
+pub alias Int = I32;
+
+/// Represents a 32 bit unsigned (positive) integer.
+pub alias UInt = U32;
+
+/// Represents a 32 bit non-zero positive integer.
+pub alias PInt = P32;
+
+/// Represents a 32 bit floating point number.
+pub alias Float = F32;
+
+/// Represents an 8 bit unsigned integer.
+pub alias Byte = U8;
+
+/// Represents an 8 bit boolean value.
+pub alias Bool = U1;
+/// Represents a true boolean value.
+pub def true: Bool = reinterpret(1);
+/// Represents a false boolean value.
+pub def false: Bool = reinterpret(0);
+
+/// Represents a zero sized unit type.
+pub struct Void {}
+/// Represents a zero sized unit value.
+pub def void: Void = .{};
+
+/// Represents a non-constructable never type.
+pub union Never {}

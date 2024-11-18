@@ -1,7 +1,7 @@
-import Std
-use Mem
+import Std;
+use Mem;
 
-namespace Ptr
+namespace Ptr;
 
 
 pub struct RcInner(T: Any) {

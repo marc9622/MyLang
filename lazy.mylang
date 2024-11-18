@@ -1,0 +1,59 @@
+import "std".Atomics;
+import "std".Threads.shedule_yield;
+
+pub struct Lazy(T: Any, D: Any = _) {
+    /// Data that might be used by the initializer.
+    data: &D;
+
+    /// Is null if the value has been initialized.
+    initializer: ?&(data: &D) -> Lazy;
+
+    value: T = uninit;
+}
+
+for Lazy(T: Any, D: Any) {
+    /// Creates a new Lazy value with the given initializer.
+    ///
+    /// The initializer is usually only called once, but no locking is done to ensure that
+    /// multiple threads won't try to initialize the value at the same time.
+    ///
+    /// If locking is desired, then either implement a initializer that does the locking,
+    /// use the `#new_global_macro` macro, or use the `new_alloc_locked` function.
+    pub def new(data: &D, initializer: (data: &D) -> T) -> Lazy(T)
+        return .{data, initializer};
+
+    /// Expands to a call to `new` where the initializer has been modified to include a
+    /// statically allocated lock that ensures that the initializer is only called once.
+    ///
+    /// The lock is a static for convenience, but it means the macro expands to a stateful
+    /// function call, which means that a single expansion of this macro should only be
+    /// used once in the program, as the lock will be shared between all uses of the same
+    /// macro expansion.
+    pub def #new_global_locked(initializer: #Lambda + () -> T) -> #Call + Lazy(T) {
+
+        def unlocked = 0;
+        def locked = 1;
+        def done = 2;
+
+        initializer.statements.#prepend(() -> {
+            let lock: &AtomicUInt8 = static AtomicUInt8.{unlocked};
+
+            // Atomically check if the value is being initialized elsewhere.
+            if (!lock.cmp_and_swap(unlocked, locked)) {
+                
+                // Spin until the value has been initialized.
+                while (lock.load() != done) shedule_yield();
+
+                // The value has been initialized elsewhere, so return.
+                return;
+            }
+
+            // The lock has been acquired, so initialize the value.
+        });
+
+        return .{&void, (data: &Void) -> #(initializer.statements)};
+    }
+}
+
+for self: Lazy(T: Any) {
+}

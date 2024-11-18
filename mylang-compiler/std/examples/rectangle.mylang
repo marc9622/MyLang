@@ -1,0 +1,46 @@
+// Example copied from Sage: https://github.com/adam-mcdaniel/sage/blob/main/assets/code2.png
+
+struct Rectangle {
+    x: Int;
+    y: Int;
+    width: Int;
+    height: Int;
+}
+
+for Rectangle {
+    def make(top_left: Position, size: Size) -> Rectangle do
+        .{top_left.x, top_left.y, size.width, size.height};
+}
+
+for rect: *Rectangle {
+    def area() -> Int do
+        rect.width * rect.height;
+
+    def perimeter() -> Int do
+        2 * (rect.width + rect.height);
+}
+
+struct Size {
+    width: Int;
+    height: Int;
+}
+
+for Size {
+    def make(width: Int, height: Int) -> Size do
+        .{width, height};
+}
+
+struct Position {
+    x: Int;
+    y: Int;
+}
+
+for Position {
+    def make(x: Int, height: Int) -> Position do
+        .{x, y};
+}
+
+def main() -> {
+    let rect = Rectangle.make(Position.make(10, 20), Size.make(30, 40));
+}
+

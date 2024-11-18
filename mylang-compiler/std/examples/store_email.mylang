@@ -1,0 +1,21 @@
+// Example copied from Roc: https://www.roc-lang.org/
+
+import Std.Mem;
+
+struct User {
+    name: Str;
+    email: Str;
+}
+
+def main() -> Void {
+    let path = Path.from("url.txt");
+    store_email(path).await.#panic;
+}
+
+def store_email(path: Path) async -> Void throws {
+    let url = File.readUtf8(path).await.#throw;
+    let user = Http.get(url, Json.#decoder(User)).await.#throw;
+    let dest = Path.from("{user.name}.txt".fmt(Mem.global).#throw);
+    _ = File.writeUtf8(dest, user.email).await.#throw;
+    print("Wrote email to {dest}".fmt(Mem.global).#throw);
+}

@@ -1,0 +1,61 @@
+// Example copied from Sage: https://github.com/adam-mcdaniel/sage/blob/main/assets/code1.png
+
+import Std.Mem;
+
+union List(T: Any) {
+    struct Cons {
+        tail: &List(T);
+        value: T;
+    }
+    struct Nil;
+}
+
+for List(T: Any) {
+    def make(value: T) -> List(T) do
+        List(T).Cons.{
+            Mem.alloc(List(T).Nil.{}),
+            value,
+        };
+}
+
+for list: &List(T: Any) {
+    def cons(value: T) -> List(T) do
+        List(T).Cons.{
+            list,
+            value,
+        };
+
+    def map(f: (T) -> U: Any) -> &List(U) {
+        if (list is Cons.{tail, value}) {
+            var cons = &tail.map(f).cons(f(value));
+            return Mem.alloc(cons);
+        }
+        return Mem.alloc(List(U).Nil.{});
+    }
+}
+
+for list: *List(T: ToStr) {
+    def print() -> Void {
+        if (list is Cons.{tail, value}) {
+            print(value.to_str());
+            print(" ");
+            tail.print();
+        }
+    }
+}
+
+def square(n: Int) -> Int do n * n;
+
+def main() -> Void {
+    var vals = List.Cons.{};
+
+    for (i in 20..=0) {
+        vals = vals.cons(i);
+    }
+
+    let squares = vals.map(square);
+
+    print("List of squares:  ");
+    squares.print();
+}
+

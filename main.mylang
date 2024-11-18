@@ -1,0 +1,7 @@
+
+def map(f: (a: A: Any) -> B: Any, m: F(A): Functor) -> F(B): Functor
+    return panic "todo";
+
+def identity(M: Monad, f: (_: X: Any) -> M(X), a: A: Any, b: B: Any) -> M(struct {A, B})
+    return panic "todo";
+

@@ -1,14 +1,14 @@
 use std::io::{BufReader, Read, BufRead};
 use std::collections::VecDeque as Queue;
 
-use crate::ast::{StrRef, IdStr};
+use crate::ast::{RcStr, Location};
 
 #[derive(Clone,Debug,Eq,PartialEq)]
-pub enum TokenType {
-    Invalid(StrRef),
-    Id(IdStr), Type(IdStr),
-    Int(StrRef), Dec(StrRef), Str(StrRef), Bool(bool),
-    Op(IdStr), Arrow, Equal,
+pub enum TokenKind {
+    Invalid(RcStr),
+    Id(RcStr), Type(RcStr),
+    Int(RcStr), Dec(RcStr), Str(RcStr), Bool(bool), // NOTE: The builtin Bool type should at some point be replaced by a type from the standard library
+    Op(RcStr), Arrow, Equal,
     Dot, Comma,
     Colon, Semicolon,
     OpenParen, CloseParen,
@@ -17,18 +17,18 @@ pub enum TokenType {
     Pub,
     Alias, Newtype, Struct, Union, Enum, Trait,
     Impl, Of, For,
-    Var, Def, Virt, Pure, Macro, Extern,
+    Var, Let, Def, Virt, Pure, Macro, Extern,
     Return, Break, Continue, Do,
     EOF,
 }
 
-impl TokenType {
-    pub fn str(&self) -> StrRef {
-        use TokenType::*;
+impl TokenKind {
+    pub fn str(&self) -> RcStr {
+        use TokenKind::*;
         return match self {
             Invalid(s)  => s.clone(),
-            Id(i)  => i.clone(),
-            Type(i)  => i.clone(),
+            Id(i)       => i.clone(),
+            Type(i)     => i.clone(),
             Int(i)      => i.clone(),
             Dec(s)      => s.clone(),
             Str(s)      => s.clone(),
@@ -58,6 +58,7 @@ impl TokenType {
             Of          => "of".into(),
             For         => "for".into(),
             Var         => "var".into(),
+            Let         => "let".into(),
             Def         => "def".into(),
             Virt        => "virt".into(),
             Pure        => "pure".into(),
@@ -72,30 +73,9 @@ impl TokenType {
     }
 }
 
-#[derive(Clone,Copy,Debug)]
-pub struct Location {
-    line: u16,
-    char: u16,
-}
-
-impl Location {
-    pub fn str(&self) -> StrRef {
-        return format!("line: {}, char: {}", self.line, self.char).into();
-    }
-
-    fn inc_line(&mut self) {
-        self.line += 1;
-        self.char = 0;
-    }
-
-    fn inc_char(&mut self, count: u16) {
-        self.char += count;
-    }
-}
-
 #[derive(Debug)]
 pub struct Token {
-    pub token_type: TokenType,
+    pub token_kind: TokenKind,
     pub location: Location,
 }
 
@@ -116,16 +96,16 @@ impl<R: Read> Tokenizer<R> {
         };
     }
 
-    fn to_token(&self, token_type: TokenType) -> Token {
-        return Token{token_type, location: self.location};
+    fn to_token(&self, token_type: TokenKind) -> Token {
+        return Token{token_kind: token_type, location: self.location};
     }
 
     fn tokenize(&mut self) -> Token {
         fn is_delimiter(c: char) -> bool {
             return ",:;()[]{}".chars().any(|e| c == e);
         }
-        fn from_delimiter(c: char) -> TokenType {
-            use TokenType::*;
+        fn from_delimiter(c: char) -> TokenKind {
+            use TokenKind::*;
             return match c {
                 ',' => Comma,
                 ':' => Colon,
@@ -168,7 +148,7 @@ impl<R: Read> Tokenizer<R> {
                 let bytes = self.reader.fill_buf().unwrap(); // NOTE: Constantly refilling the buffer might be dumb
 
                 if bytes.is_empty() {
-                    return self.to_token(TokenType::EOF);
+                    return self.to_token(TokenKind::EOF);
                 }
 
                 let mut c = match bytes.get(consumed) {
@@ -205,7 +185,7 @@ impl<R: Read> Tokenizer<R> {
                                 state = IsString;
                             }
                             '-' if next == Some('>') => {
-                                token = self.to_token(TokenType::Arrow);
+                                token = self.to_token(TokenKind::Arrow);
                                 consumed += 2;
                                 self.location.inc_char(2);
                                 break 'build_token;
@@ -218,11 +198,11 @@ impl<R: Read> Tokenizer<R> {
                                     self.word.push(op);
                                     break 'block;
                                 }}
-                                token = self.to_token(TokenType::Equal);
+                                token = self.to_token(TokenKind::Equal);
                                 break 'build_token;
                             }
                             '.' => {
-                                token = self.to_token(TokenType::Dot);
+                                token = self.to_token(TokenKind::Dot);
                                 consumed += 1;
                                 self.location.inc_char(1);
                                 break 'build_token;
@@ -270,7 +250,7 @@ impl<R: Read> Tokenizer<R> {
                                 self.word.push('#');
                             }
                             ch => {
-                                token = self.to_token(TokenType::Invalid(ch.to_string().into()));
+                                token = self.to_token(TokenKind::Invalid(ch.to_string().into()));
                                 consumed += 1;
                                 self.location.inc_char(1);
                                 break 'build_token;
@@ -323,7 +303,7 @@ impl<R: Read> Tokenizer<R> {
                         }
                         IsString => match c {
                             '\n' => {
-                                token = self.to_token(TokenType::Invalid(self.word.to_owned().into()));
+                                token = self.to_token(TokenKind::Invalid(self.word.to_owned().into()));
                                 consumed += 1;
                                 self.location.inc_line();
                                 break 'build_token;
@@ -474,23 +454,23 @@ impl<R: Read> Tokenizer<R> {
                         Some(b) => *b as char,
                         None => { match state {
                             IsString => {
-                                token = self.to_token(TokenType::Invalid(self.word.to_owned().into()));
+                                token = self.to_token(TokenKind::Invalid(self.word.to_owned().into()));
                                 break 'build_token;
                             }
                             IsDecimal => {
-                                token = self.to_token(TokenType::Dec(self.word.to_owned().into()));
+                                token = self.to_token(TokenKind::Dec(self.word.to_owned().into()));
                                 break 'build_token;
                             }
                             IsNumber => {
-                                token = self.to_token(TokenType::Int(self.word.to_owned().into()));
+                                token = self.to_token(TokenKind::Int(self.word.to_owned().into()));
                                 break 'build_token;
                             }
                             IsOperator => {
-                                token = self.to_token(TokenType::Op(self.word.to_owned().into()));
+                                token = self.to_token(TokenKind::Op(self.word.to_owned().into()));
                                 break 'build_token;
                             }
                             IsComment{is_line: _, block_depth: _} => {
-                                token = self.to_token(TokenType::EOF);
+                                token = self.to_token(TokenKind::EOF);
                                 break 'build_token;
                             }
                             _ => {
@@ -504,7 +484,7 @@ impl<R: Read> Tokenizer<R> {
             }
 
             // Create token
-            use TokenType::*;
+            use TokenKind::*;
             let w = self.word.as_str();
             token = self.to_token(match state {
                 IsEmpty => EOF,
@@ -522,6 +502,7 @@ impl<R: Read> Tokenizer<R> {
                     "of"        => Of,
                     "for"       => For,
                     "var"       => Var,
+                    "let"       => Let,
                     "def"       => Def,
                     "virt"      => Virt,
                     "pure"      => Pure,
@@ -531,13 +512,13 @@ impl<R: Read> Tokenizer<R> {
                     "break"     => Break,
                     "continue"  => Continue,
                     "do"        => Do,
-                    _ => Id(w.into()),
+                    _ => Id(self.word.as_str().into()),
                 }
-                IsType => Type(w.into()),
-                IsString => Str(w.into()),
-                IsNumber => Int(w.into()),
-                IsDecimal => Dec(w.into()),
-                IsOperator => Op(w.into()),
+                IsType => Type(self.word.as_str().into()),
+                IsString => Str(RcStr::from(w)),
+                IsNumber => Int(RcStr::from(w)),
+                IsDecimal => Dec(RcStr::from(w)),
+                IsOperator => Op(RcStr::from(w)),
                 IsComment{is_line: _, block_depth: _} => panic!("Comment state should not be reached"),
             });
 
@@ -550,10 +531,18 @@ impl<R: Read> Tokenizer<R> {
         return token;
     }
 
+    /// Returns the next token and consumes it.
+    /// (Will reuse peeked tokens if possible)
     pub fn next(&mut self) -> Token {
-        return self.peeked.pop_front().unwrap_or_else(|| self.tokenize());
+        if self.peeked.is_empty() {
+            return self.tokenize();
+        }
+        return unsafe {self.peeked.pop_front().unwrap_unchecked()};
     }
 
+    /// Returns the n'th token after the last consumed token.
+    /// It does not consume it, meaning that it will not affect the next call to next().
+    /// 'n' is 0-indexed, meaning that peek(0) returns the next token.
     pub fn peek(&mut self, n: usize) -> &Token {
         while self.peeked.len() <= n {
             let token = self.tokenize();
@@ -562,15 +551,26 @@ impl<R: Read> Tokenizer<R> {
         return self.peeked.get(n).unwrap();
     }
 
-    pub fn str(&mut self) -> StrRef {
+    /// Consumes the next peeked token.
+    /// Panics if there are no peeked tokens.
+    pub fn consume_peeked(&mut self) {
+        if self.peeked.is_empty() {
+            panic!("No peeked tokens to consume");
+        }
+        self.peeked.pop_front();
+    }
+
+    /// Returns a string representation of alle tokens until an EOF.
+    /// Does not consume any tokens.
+    pub fn str(&mut self) -> RcStr {
         let mut string = String::new();
         let mut indent = 0;
         let mut new_line = true;
         let mut index = 0;
 
         loop {
-            use TokenType::*;
-            let token = &self.peek(index).token_type;
+            use TokenKind::*;
+            let token = &self.peek(index).token_kind;
             match token {
                 EOF => break,
                 OpenBracket => {

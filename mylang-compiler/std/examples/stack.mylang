@@ -1,0 +1,29 @@
+// Example copied from Inko: https://inko-lang.org/
+
+import Std;
+
+struct Stack(T: Any) {
+    arr: DynArr(T);
+}
+
+for Stack(T: Any) {
+    def new() ->
+        return Stack(T).{ DynArr.new() };
+}
+
+for stack: &Stack(T: Any) {
+    def push(value: T) -> {
+        return &stack.arr.push_back(value);
+
+    def pop() ->
+        return &stack.arr.pop_back();
+}
+
+def main() -> {
+    var stack = Stack.new();
+
+    stack.push(42);
+    var value = stack.pop().#panic;
+
+    #assert(value == 42);
+}

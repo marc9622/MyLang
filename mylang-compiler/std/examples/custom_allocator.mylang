@@ -1,0 +1,71 @@
+import Std.Mem.Alloc;
+import Std.Mem.Dealloc;
+import Std.Mem.Realloc;
+import Std.Mem.Allocator;
+import Std.Mem.GlobalAllocator;
+import Std.Ptr;
+
+// ---------- MultiArena ----------
+
+pub struct MultiArena(arena_size: Usize, Alloc: Allocator = GlobalAllocator) {
+    arenas: ArrList(Arena(arena_size), Alloc);
+    parent: &Alloc; // = GlobalAllocator.instance;
+}
+
+for MultiArena(arena_size: Usize, Alloc: Allocator) {
+    pub def new(parent: &Alloc) -> Self
+        return .{ArrList.new(), alloc};
+}
+
+for multi: &MultiArena(arena_size: Usize, Alloc: Allocator) {
+    impl Alloc
+    pub def alloc(
+}
+
+// ---------- Arena ----------
+
+struct Arena(arena_size: Usize) {
+    count: Usize;
+    next: ^Byte;
+    data: &[size]Byte;
+}
+
+for Arena(arena_size: Usize) {
+    pub def new(parent: &Allocator) -> Self {
+        var data: &[arena_size]Byte = alloc.alloc(uninit).#panic;
+        return .{0, ^data, data};
+    }
+}
+
+for arena: &Arena(arena_size: Usize) {
+    enum AllocResult: U8 {
+        def out_of_space;
+        def alloc_success;
+    }
+
+    def alloc(size: Usize) -> AllocResult {
+        if (Ptr.diff(arena.data, arena.next) < size)
+            return out_of_space;
+        
+        &arena.next.increase(size);
+        &arena.count++;
+        return alloc_success;
+    }
+
+    enum DeallocResult: U8 {
+        def not_contained;
+        def dealloc_not_empty;
+        def dealloc_emptied;
+    }
+
+    def dealloc(ptr: ^T: Any) -> DeallocResult {
+        if (!Math.in_range(ptr, ^arena.data, arena.next))
+            return not_contained;
+
+        if (arena.count == 0)
+            return dealloc_emptied;
+
+        return dealloc_not_empty;
+    }
+}
+

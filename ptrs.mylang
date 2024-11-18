@@ -1,0 +1,33 @@
+
+// Maybe use ptr syntax like this?
+
+// We probably want to avoid the ambiguity of using
+// `&` both as an address-of operator and as a type.
+struct Thing {
+    ref: &Thing;
+    view: &view Thing;
+    raw: &raw Thing;
+}
+
+// or
+
+struct Thing {
+    ref: *Thing;
+    view: *view Thing;
+    raw: *raw Thing;
+}
+
+// or
+
+struct Thing {
+    ref: ^Thing;
+    view: ^view Thing;
+    raw: ^raw Thing;
+}
+
+struct Thing {
+    const: *const Thing;
+    const: *constant Thing;
+    const: *readonly Thing;
+    const: *rodata Thing;
+}

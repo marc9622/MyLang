@@ -1,0 +1,62 @@
+/*
+# Function contexts
+A function context can be any of the following. (from most to least restrictive)
+
+## pure
+These functions must not have any side-effects.
+They can be called from any context.
+They can run at compile time.
+
+## nopanic
+These functions must not panic.
+They cannot be called in pure contexts.
+They can be called from external code.
+
+## base
+These functions must be synchronous.
+They cannot be called in nopanic contexts.
+This is the default context.
+
+## async
+These functions can be asynchronous.
+They cannot be called in base contexts.
+They can be run asynchronously.
+
+*/
+
+for arr: *Arr(T: Any, n: Usize) {
+    def mapped(mapper: (elem: T) c: context -> U: Any) c -> Arr(U, n) {
+        var res = Arr(U, n).uninit();
+        for (elem at i in arr.views())
+            &res.at(i) = mapper(elem).#do;
+        return res;
+    }
+    def combined(seed: T, combiner: (left: *T, right: *T) c: context -> T) c -> T {
+        var res = T.empty;
+        for (elem in arr.views())
+            &res = combiner(res, elem).#do;
+        return res;
+    }
+}
+
+def main() -> {
+    let db_conns = Arr.new(
+        DbConn.connect("localhost:1234"),
+        DbConn.connect("localhost:1235"),
+        DbConn.connect("localhost:1236"),
+        DbConn.connect("localhost:1237"),
+    );
+
+    let counts = db_conns
+        .mapped((conn) -> Void {
+            return conn.table("users").count().#await
+        }).#await
+        .combined(0, (left, right) pure -> {
+            return left + right
+        });
+
+    printfln("Total users: %d", counts);
+}
+
+def function = (a) -> return;
+

@@ -1,0 +1,22 @@
+
+def main() -> Void {
+
+    let this: Int = 123;
+
+    let that: Int {
+
+        let temp = true;
+
+        yield that = temp;
+
+    }
+    
+    let thom = switch this {
+    case 0:      123;
+    case 1:      234;
+    case 2:      345;
+    case 3..255: 0;
+    };
+
+}
+

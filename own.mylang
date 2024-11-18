@@ -1,0 +1,112 @@
+
+/* --- Terminology for different kinds of memory ---
+
+Memory can be used as an in-memory value. The memory of such value lives where its
+variable is located, meaning that the value either lives on the stack or in global data
+depending on whether the variable is a stack or global variable.
+
+Memory can also be accessed through a some kind of pointer. The referenced memory could
+either live on the stack, in global data or on the heap.
+
+Stack and global memory is automatically allocated or deallocated for us, either on
+function entry and exit or at program start and end respectively. This is not always the
+case when using pointers to access memory, as heap memory might need to be manually
+deallocated. That is why we differentiate between managed and unmanaged memory.
+
+Managed memory is memory that we do not need to manually deallocate, while unmanaged
+memory is memory that we are responsible for deallocating. Because multiple pointers can
+point to the same heap memory, only one of them should be an unmanaged pointer, while the
+others should be managed pointers. This is to avoid double freeing the memory.
+
+Related to managed and unmanaged memory is the concept of ownership. The owner of a piece
+of memory is responsible for the state of that memory, but not necessarily for
+deallocating it. The owner is responsible for making sure that the value(s) in the memory
+is deinitialized before the memory is deallocated.
+
+Stack memory is an example of memory that needs an owner, but is always managed. The
+deallocation of stack memory is handled by the compiler, but the value(s) in the memory
+might still need to be deinitialized before the memory is deallocated.
+
+Some types represent memory that is guaranteed to be in a valid state and other do not.
+The state of some memory depends on whether it has been initialized or not. Before a
+piece of memory is initialized and after it has been deinitialized, it is in an invalid
+state.
+
+Using `[<length>]` before as the first part of a type name indicates that the memory is
+an in-memory value with a compile time known length. Using `^`, `&`, or `*` as the first
+part of a type name indicates that the memory is accessed through some kind of pointer.
+A pointer, `^`, refers to some memory that might not be valid, while a reference, `&`,
+and a view, `*`, refers to memory that is guaranteed to be valid. Pointers and references
+are managed by default, meaning that the memory is documented to be deallocated elsewhere,
+but can me marked as unmanaged by using `!` after the `^` or `&`.
+TODO: Ownership and Temporary/Static memory
+
+Here are some examples:
+
+
+ # Compile time known lengths
+
+ * [4]U8
+    A managed value of maybe valid memory.
+
+ * ^[4]U8
+    A managed pointer to maybe valid memory.
+    (This is how the CStr type is defined.)
+
+ * ^![4]U8
+    An unmanaged pointer to maybe valid memory.
+    (This is the kind of type you get back when allocating memory.)
+
+ * &[4]U8
+    A managed reference to guaranteed valid memory.
+
+ * &![4]U8
+    An unmanaged reference to guaranteed valid memory.
+
+
+ # Runtime known lengths
+
+ * Arr(U8)
+    An unmanaged reference to guaranteed valid memory.
+    (Is a reference to a length and some memory under the hood.)
+
+ * &Arr(U8)
+    A managed reference to guaranteed valid memory.
+
+ * Slice(U8)
+    A managed reference to guaranteed valid memory.
+    (Is a length and a reference to some memory under the hood.)
+
+*/
+
+import Std;
+
+struct Arr(T: Sized) {
+    len: U64;
+    cap: U64;
+    data: ?&![_]T;
+}
+
+for Arr(T: Sized) as A {
+    def init() -> own A
+        return .{0, 0, null};
+}
+
+for arr: own Arr(T: Sized) as A {
+    def deinit(alloc: Alloc) -> Void {
+        var {len, cap, data} = arr;
+
+        if (len != 0) {
+            panic();
+        }
+
+        alloc.delete_many(data, cap);
+    }
+
+    def deinit_unchecked(alloc: Alloc) -> Void {
+        var {len, cap, data} = arr;
+
+        alloc.delete_many(arr.data, arr.cap);
+    }
+}
+

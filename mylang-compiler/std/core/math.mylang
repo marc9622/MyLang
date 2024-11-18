@@ -1,0 +1,138 @@
+module Math;
+
+/* Basic arithmetic operations */ {
+    /// Represents a type that defines the basic arithmetic operations.
+    /// Each operation is allowed to cause side effects and panic.
+    /// (e.g. division by zero)
+    pub alias Num = Add + Sub + Neg + Mul + Div + Mod + Zero;
+
+    pub trait Add for T: Any
+        virt operator(left: *T, right: *T) -> T;
+
+    pub trait Sub for T
+        virt operator(left: *T, right: *T) -> T;
+
+    pub trait Neg for T
+        virt operator(self: *T) -> T;
+
+    pub trait Mul for T
+        virt operator(left: *T, right: *T) -> T;
+
+    pub trait Div for T
+        virt operator(left: *T, right: *T) -> T;
+
+    pub trait Mod for T
+        virt operator(left: *T, right: *T) -> T;
+
+    pub trait Zero for T
+        virt zero: T;
+
+    // Default implementations
+    for T: Sub + Zero {
+        impl Neg
+        virt operator(self: *T) -> T do T.zero - self;
+    }
+}
+
+/* More arithmetic operations */ {
+    pub alias NumExt = Num + Pow + Exp + Sqrt + LogN + Log2 + Log10;
+
+    pub trait Pow for T {
+        for self: *T
+        virt pow(exponent: *T) -> T;
+    }
+
+    pub trait Exp for T {
+        for self: *T
+        virt exp() -> T;
+    }
+
+    pub trait Sqrt for T {
+        for self: *T
+        virt sqrt() -> T;
+    }
+
+    pub trait LogN for T {
+        for self: *T
+        virt logn(base: *T) -> T;
+    }
+
+    pub trait Log2 for T {
+        for self: *T
+        virt log2() -> T;
+    }
+
+    pub trait Log10 for T {
+        for self: *T
+        virt log10() -> T;
+    }
+}
+
+/* Trigonometric operations */ {
+    pub trait Trig for T {
+        virt Angle: Any;
+        for self: *T {
+            virt arcsin() -> Angle;
+            virt arccos() -> Angle;
+            virt arctan() -> Angle;
+        }
+        for angle: *Angle {
+            virt sin() -> T;
+            virt cos() -> T;
+            virt tan() -> T;
+        }
+    }
+}
+
+module Pure {
+    /// Represents a type that defines the basic arithmetic operations.
+    /// No operation is allowed to cause side effects or panic.
+    /// Instead, each operation is allowed to return other values,
+    /// which could be used to indicate errors.
+    pub trait PureNum for PureAdd(Result = T: Any) + PureSub(Result = T)
+                             + PureNeg(Result = T) + PureMul(Result = T)
+                             + PureDiv(Result = T) + PureMod(Result = T)
+
+    for T: PureAdd(Result = R: Any) + PureSub(Result = R)
+         + PureNeg(Result = T) + PureMul(Result = R)
+         + PureDiv(Result = R) + PureMod(Result = R)
+    pub trait PureNum {
+        def Result = R;
+    }
+
+    for T: Any
+    pub trait PureAdd {
+        virt operator(left: *T, right: *T) pure -> Result;
+    }
+
+    pub trait PureAdd for T {
+        virt Result = T;
+        virt operator(left: *T, right: *T) pure -> Result;
+    }
+
+    pub trait PureSub for T {
+        virt Result = T;
+        virt operator(left: *T, right: *T) pure -> T;
+    }
+
+    pub trait PureNeg for T {
+        virt Result = T;
+        virt operator(self: *T) pure -> T;
+    }
+
+    pub trait PureMul for T {
+        virt Result = T;
+        virt operator(left: *T, right: *T) pure -> T;
+    }
+
+    pub trait PureDiv for T {
+        virt Result = T;
+        virt operator(left: *T, right: *T) pure -> T;
+    }
+
+    pub trait PureMod for T {
+        virt Result = T;
+        virt operator(left: *T, right: *T) pure -> T;
+    }
+}
+

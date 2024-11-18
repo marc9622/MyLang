@@ -1,0 +1,50 @@
+import Std.Math;
+import Std.Mem;
+use Mem;
+
+pub struct ArrList(T: Type) {
+    cap: Usize;
+    size: Usize;
+    data: &[]T;
+}
+
+for ArrList(_) as Self {
+    for self: *Self {
+        pub def is_empty() -> Bool return self.size == 0;
+        pub def is_full() -> Bool return self.size == self.cap;
+    }
+
+    for self: &Self {
+        pub def clear() -> Void { &self.size = 0; }
+    }
+}
+
+for ArrList(T: Type) as Self {
+    pub def new() -> Self return Self.{0, 0, static []T.{}};
+
+    impl From([size: Usize]T)
+    pub def from(data: [size]T) -> Self return Self.{size, size, data};
+
+    for self: *Self {
+        pub def get(index: Usize) -> *T return data.get_checked(index, size);
+    }
+
+    for self: &Self {
+        pub def at(index: Usize) -> &T return &data.at_checked(index, size);
+
+        def resize(new_cap: Usize, alloc: &Allocator = &GlobalAllocator.instance) -> throws AllocError {
+            &alloc.resize_copied(^self.data, new_cap).#throw;
+            self.cap = new_cap;
+        }
+
+        pub def ensure_cap(new_cap: Usize, alloc: &Allocator = &GlobalAllocator.instance) -> throws AllocError {
+            if (new_cap <= self.cap) return;
+            &self.resize(Math.next_pow2(new_cap), alloc).#throw;
+        }
+
+        pub def trim(alloc: &Allocator = &GlobalAllocator.instance) -> throws AllocError {
+            &self.resize(Math.next_pow2(self.size), alloc).#throw;
+        }
+    }
+}
+

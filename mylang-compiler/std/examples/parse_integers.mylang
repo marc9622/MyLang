@@ -1,0 +1,24 @@
+// Example copied from Zig: https://ziglang.org/
+
+import Std;
+
+def main() -> {
+    let input: Arr(U8) = "123 67 89,99";
+    var alloc = Std.Testing.Allocator;
+
+    var arr = Std.DynArr.new(&alloc);
+    defer arr.free(&alloc);
+
+    for num in Std.Seq.#while_split_on_any(input, " ,") {
+        let n: U32 = Std.Str.parse(num);
+        arr.push_back(n).#throw;
+    });
+
+    let expected = .{ 123, 67, 89, 99 };
+
+    #assert(arr.size() == expected.len);
+    for exp at i in expected.#for {
+        let actual = arr.get(i).#throw;
+        #assert(actual == exp);
+    });
+}

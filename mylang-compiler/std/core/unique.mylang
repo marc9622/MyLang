@@ -7,16 +7,16 @@ namespace Ptr
 /// Unique is a type that represents a non-aliased mutable pointer.
 /// It typically owns the value it points to, but does not have a
 /// a reference to its allocator, so it must be freed manually.
-pub struct Unique(T: Any: A: Allocator) {
+pub struct Unique(T: Any, A: Allocator) {
     ptr: &T,
 }
 
-for Unique(T:, A:) as U {
+for Unique(T: Any, A: Allocator) as U {
     pub def new(value: T, alloc: &A) -> U throws AllocError
         do U.{ &alloc.try_alloc(value).#throw };
 }
 
-for u: Unique(T:, A:) {
+for u: Unique(T: Any, A: Allocator) {
     pub def get() -> &T
         do u.ptr;
 

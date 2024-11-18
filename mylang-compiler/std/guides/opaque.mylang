@@ -1,0 +1,66 @@
+
+trait Into {
+    virt FromType: some From(IntoType = Self);
+    for self: Self
+        virt into() -> FromType;
+}
+trait From {
+    virt IntoType: some Into(FromType = Self);
+    virt from(into: IntoType) -> Self;
+}
+
+// ------ Anonymous Existentials ------
+
+// Return type is an existential that is implicitly dependent on all parameter types.
+def convert(value: some Into) -> some From
+    return value.into();
+
+// Even if the concrete type is the same in all cases.
+def convert(_: some Into) -> some From
+    return 10.into();
+
+// Return type is an existential that is implicitly dependent on all parameter types.
+def convert(value: I: Into) -> I.FromType some From
+    return value.into();
+
+// Even if the concrete type is the same in all cases.
+def convert(_: Into) -> Int.FromType some From
+    return 10.into();
+
+// -------- Named Existentials --------
+
+// Return type is an existential that is explicitly dependent on the parameter type I.
+newtype Opaque(I: Into) = I.FromType some From;
+def convert(value: I: Into) -> Opaque(I)
+    return value.into();
+
+// Even if the concrete type is the same is all cases.
+newtype Opaque(_: Into) = Int.FromType some From;
+def convert(value: I: Into) -> Opaque(I)
+    return value.into();
+
+// Return type is an existential that is explicitly not dependent on any parameter types.
+newtype Opaque = Int.FromType some From;
+def convert(_: Into) -> Opaque
+    return 10.into();
+
+// ----- Generative Existentials ------
+
+// Return type is a generative (existential) that is dependent on each invocation.
+// That means that the return type is a fresh, distinct type for each call of this function.
+def convert(value: some Into) -> newtype some From
+    return value.into();
+
+// Even if the concrete type is the same in all cases.
+def conert(_: some Into) -> newtype some From
+    return 10.into();
+
+// Return type is a generative (existential) that is dependent on each invocation.
+// That means that the return type is a fresh, distinct type for each call of this function.
+def convert(value: I: Into) -> newtype I.FromType some From
+    return value.into();
+
+// Even if the concrete type is the same in all cases.
+def convert(_: Into) -> newtype Int.FromType some From
+    return 10.into();
+
